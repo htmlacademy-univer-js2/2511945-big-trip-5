@@ -12,3 +12,9 @@ Thumbs.db
 node_modules/
 
 # Собранные файлы (допишите самостоятельно)
+
+# Игнорировать папку сборки
+/build
+
+# Игнорировать node_modules
+/node_modules
