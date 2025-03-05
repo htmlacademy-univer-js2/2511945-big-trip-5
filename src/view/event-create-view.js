@@ -48,4 +48,4 @@ export default class EventCreateView {
     removeElement() {
       this.element = null;
     }
-  }
+}

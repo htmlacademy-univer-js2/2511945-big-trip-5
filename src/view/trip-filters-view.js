@@ -45,4 +45,4 @@ export default class TripFiltersView {
     removeElement() {
       this.element = null;
     }
-  }
+}

@@ -48,4 +48,4 @@ export default class EventListView {
     removeElement() {
       this.element = null;
     }
-  }
+}
