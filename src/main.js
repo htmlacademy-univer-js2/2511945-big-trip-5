@@ -14,3 +14,4 @@ const tripPresenter = new TripPresenter({
 render(new TripFiltersView(), filtersElement);
 
 tripPresenter.init();
+     
