@@ -1,31 +1,32 @@
 import {createElement} from '../render.js';
 
 function createSortTemplate() {
-  return (
-    `<form class="trip-filters" action="#" method="get">
-        <div class="trip-filters__filter">
-            <input id="filter-everything" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="everything" checked>
-            <label class="trip-filters__filter-label" for="filter-everything">Everything</label>
-        </div>
+  return `<form class="trip-events__trip-sort  trip-sort" action="#" method="get">
+            <div class="trip-sort__item  trip-sort__item--day">
+              <input id="sort-day" class="trip-sort__input  visually-hidden" type="radio" name="trip-sort" value="sort-day">
+              <label class="trip-sort__btn" for="sort-day">Day</label>
+            </div>
 
-        <div class="trip-filters__filter">
-            <input id="filter-future" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="future">
-            <label class="trip-filters__filter-label" for="filter-future">Future</label>
-        </div>
+            <div class="trip-sort__item  trip-sort__item--event">
+              <input id="sort-event" class="trip-sort__input  visually-hidden" type="radio" name="trip-sort" value="sort-event" disabled>
+              <label class="trip-sort__btn" for="sort-event">Event</label>
+            </div>
 
-        <div class="trip-filters__filter">
-            <input id="filter-present" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="present">
-            <label class="trip-filters__filter-label" for="filter-present">Present</label>
-        </div>
+            <div class="trip-sort__item  trip-sort__item--time">
+              <input id="sort-time" class="trip-sort__input  visually-hidden" type="radio" name="trip-sort" value="sort-time">
+              <label class="trip-sort__btn" for="sort-time">Time</label>
+            </div>
 
-        <div class="trip-filters__filter">
-            <input id="filter-past" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="past">
-            <label class="trip-filters__filter-label" for="filter-past">Past</label>
-        </div>
+            <div class="trip-sort__item  trip-sort__item--price">
+              <input id="sort-price" class="trip-sort__input  visually-hidden" type="radio" name="trip-sort" value="sort-price" checked>
+              <label class="trip-sort__btn" for="sort-price">Price</label>
+            </div>
 
-        <button class="visually-hidden" type="submit">Accept filter</button>
-        </form>`
-  );
+            <div class="trip-sort__item  trip-sort__item--offer">
+              <input id="sort-offer" class="trip-sort__input  visually-hidden" type="radio" name="trip-sort" value="sort-offer" disabled>
+              <label class="trip-sort__btn" for="sort-offer">Offers</label>
+            </div>
+          </form>`;
 }
 
 export default class TripSortView {
