@@ -162,8 +162,8 @@ function createEventCreateTemplate() {
                   </section>
                 </section>
               </form>
-            </li>`
-};
+            </li>`;
+}
 
 export default class EventCreateView extends AbstractView {
   get template() {
