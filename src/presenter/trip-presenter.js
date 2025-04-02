@@ -18,18 +18,26 @@ export default class TripPresenter {
 
     render(new TripSortView(), this.tripContainer);
     render(this.eventListComponent, this.tripContainer);
-    render(new EventEditView, this.eventListComponent.getElement());
+    
+    // Сначала рендерим форму создания
     render(new EventCreateView(), this.eventListComponent.getElement());
+    
+    // Затем рендерим форму редактирования
+    render(new EventEditView(), this.eventListComponent.getElement());
+    
+    // Рендерим 3 стандартные карточки событий
     for (let i = 0; i < 3; i++) {
       render(new EventView(), this.eventListComponent.getElement());
     } 
-    for (let i = 1; i < this.eventsListPoints.length; i++){
-      const point = new this.EventEditView({
+    
+    // Рендерим точки из модели данных
+    for (let i = 1; i < this.eventsListPoints.length; i++) {
+      const point = new EventEditView({
         point: this.eventsListPoints[i],
-        offers: [...this.pointsModel.getOffersById(this.eventsListPoints[i].type, this.eventsListPoints[i])],
-        destination:this.pointsModel.getDestinationsById(this.eventsListPoints[i].destination)
+        offers: [...this.pointsModel.getOffersById(this.eventsListPoints[i].type, this.eventsListPoints[i].offers)],
+        destination: this.pointsModel.getDestinationById(this.eventsListPoints[i].destination)
       });
-      render(point,this.eventListComponent.getElement());
+      render(point, this.eventListComponent.getElement());
     }
   }
 }
