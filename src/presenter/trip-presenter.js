@@ -1,4 +1,4 @@
-import {render} from '../framework/render.js';
+import {render, replace} from '../framework/render.js';
 import EventCreateView from '../view/event-create-view.js';
 import EventEditView from '../view/event-edit-view.js';
 import EventListView from '../view/event-list-view.js';
@@ -18,18 +18,48 @@ export default class TripPresenter {
 
     render(new TripSortView(), this.tripContainer);
     render(this.eventListComponent, this.tripContainer);
-    render(new EventEditView, this.eventListComponent.getElement());
-    render(new EventCreateView(), this.eventListComponent.getElement());
-    for (let i = 0; i < 3; i++) {
-      render(new EventView(), this.eventListComponent.getElement());
-    } 
-    for (let i = 1; i < this.eventsListPoints.length; i++){
-      const point = new this.EventEditView({
-        point: this.eventsListPoints[i],
-        offers: [...this.pointsModel.getOffersById(this.eventsListPoints[i].type, this.eventsListPoints[i])],
-        destination:this.pointsModel.getDestinationsById(this.eventsListPoints[i].destination)
-      });
-      render(point,this.eventListComponent.getElement());
+    
+    // Точки
+    for (let i = 0; i < this.eventsListPoints.length; i++) {
+      this.#renderPoint(this.eventsListPoints[i]);
     }
+  }
+
+  #renderPoint(point) {
+    const escKeyDownHandler = (evt) => {
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        replaceFormToPoint();
+        document.removeEventListener('keydown', escKeyDownHandler);
+      }
+    };
+
+    const pointComponent = new EventView({
+      onEditClick: () => {
+        replacePointToForm();
+        document.addEventListener('keydown', escKeyDownHandler);
+      }
+    });
+
+    const pointEditComponent = new EventEditView({
+      onFormSubmit: () => {
+        replaceFormToPoint();
+        document.removeEventListener('keydown', escKeyDownHandler);
+      },
+      onCancelClick: () => {
+        replaceFormToPoint();
+        document.removeEventListener('keydown', escKeyDownHandler);
+      }
+    });
+
+    function replacePointToForm() {
+      replace(pointEditComponent, pointComponent);
+    }
+
+    function replaceFormToPoint() {
+      replace(pointComponent, pointEditComponent);
+    }
+
+    render(pointComponent, this.eventListComponent.element);
   }
 }
