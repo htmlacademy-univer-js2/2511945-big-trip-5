@@ -1,5 +1,7 @@
-import AbstractView from "../framework/view/abstract-view.js";
-function createEventTemplate() {
+import AbstractView from "../framework/view/abstract-view.js"; 
+
+function createEventTemplate(point) {
+  const {isFavorite} = point;
   return `<li class="trip-events__item">
               <div class="event">
                 <time class="event__date" datetime="2019-03-18">MAR 18</time>
@@ -26,7 +28,7 @@ function createEventTemplate() {
                     <span class="event__offer-price">20</span>
                   </li>
                 </ul>
-                <button class="event__favorite-btn event__favorite-btn--active" type="button">
+                <button class="event__favorite-btn ${isFavorite ? 'event__favorite-btn--active' : ''}" type="button">
                   <span class="visually-hidden">Add to favorite</span>
                   <svg class="event__favorite-icon" width="28" height="28" viewBox="0 0 28 28">
                     <path d="M14 21l-8.22899 4.3262 1.57159-9.1631L.685209 9.67376 9.8855 8.33688 14 0l4.1145 8.33688 9.2003 1.33688-6.6574 6.48934 1.5716 9.1631L14 21z"/>
@@ -41,21 +43,33 @@ function createEventTemplate() {
 
 export default class EventView extends AbstractView {
   #handleEditClick = null;
+  #handleFavoriteClick = null;
+  #point = null;
 
-  constructor({onEditClick}) {
+  constructor({point, onEditClick, onFavoriteClick}) {
     super();
+    this.#point = point;
     this.#handleEditClick = onEditClick;
+    this.#handleFavoriteClick = onFavoriteClick;
+    
     this.element.querySelector('.event__rollup-btn')
       .addEventListener('click', this.#editClickHandler);
+    
+    this.element.querySelector('.event__favorite-btn')
+      .addEventListener('click', this.#favoriteClickHandler);
   }
 
   get template() {
-    return createEventTemplate();
+    return createEventTemplate(this.#point);
   }
 
   #editClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleEditClick();
   };
+
+  #favoriteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFavoriteClick();
+  };
 }
-  
