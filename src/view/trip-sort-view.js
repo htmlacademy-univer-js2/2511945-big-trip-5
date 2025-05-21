@@ -18,7 +18,6 @@ export default class TripSortView extends AbstractView {
   #sortItems = [];
   #handleSortTypeChange = null;
 
-  constructor(sortItems) {
   constructor({sortItems, onSortTypeChange}) {
     super();
     this.#sortItems = sortItems;
