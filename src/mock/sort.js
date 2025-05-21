@@ -11,4 +11,3 @@ export const SORT_TYPES = {
   { type: SORT_TYPES.PRICE, name: 'Price', isDisabled: false },
   { type: 'sort-offer', name: 'Offers', isDisabled: true }
 ]);
-  
