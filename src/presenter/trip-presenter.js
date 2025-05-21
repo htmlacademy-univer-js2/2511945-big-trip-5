@@ -10,7 +10,7 @@ export default class TripPresenter {
   #tripContainer = null;
   #pointsModel = null;
   #pointPresenters = new Map();
-  #currentSortType = SORT_TYPES.DAY; // Changed default to DAY as per requirements
+  #currentSortType = SORT_TYPES.DAY;
   #eventsListPoints = [];
   #sortComponent = null;
 

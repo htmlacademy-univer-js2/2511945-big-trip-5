@@ -101,7 +101,8 @@ export default class PointPresenter {
     });
   };
 
-  #handleFormSubmit = () => {
+  #handleFormSubmit = (point) => {
+    this.#onDataChange(point);
     this.#replaceFormToPoint();
   };
 

@@ -1,8 +1,8 @@
 export const SORT_TYPES = {
-  DAY: 'sort-day',
-  TIME: 'sort-time',
-  PRICE: 'sort-price'
-};
+    DAY: 'sort-day',
+    TIME: 'sort-time',
+    PRICE: 'sort-price'
+  };
 
 export const generateSortItems = () => ([
   { type: SORT_TYPES.DAY, name: 'Day', isDisabled: false, isChecked: true },
