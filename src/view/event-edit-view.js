@@ -1,6 +1,9 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import { mockOffers } from '../mock/offers.js';
 import { mockDestinations } from '../mock/destinations.js';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import dayjs from 'dayjs';
 
 function createEventEditTemplate(state) {
   const { point = {}, destination, offers } = state;
@@ -43,10 +46,10 @@ function createEventEditTemplate(state) {
 
                 <div class="event__field-group  event__field-group--time">
                   <label class="visually-hidden" for="event-start-time-1">From</label>
-                  <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${point.dateFrom || ''}">
+                  <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${point.dateFrom ? dayjs(point.dateFrom).format('DD/MM/YY HH:mm') : ''}">
                   &mdash;
                   <label class="visually-hidden" for="event-end-time-1">To</label>
-                  <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${point.dateTo || ''}">
+                  <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${point.dateTo ? dayjs(point.dateTo).format('DD/MM/YY HH:mm') : ''}">
                 </div>
 
                 <div class="event__field-group  event__field-group--price">
@@ -106,6 +109,8 @@ function createEventEditTemplate(state) {
 export default class EventEditView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleCancelClick = null;
+  #datepickerFrom = null;
+  #datepickerTo = null;
 
   constructor({ point = {}, onFormSubmit, onCancelClick }) {
     super();
@@ -123,6 +128,20 @@ export default class EventEditView extends AbstractStatefulView {
 
   get template() {
     return createEventEditTemplate(this._state);
+  }
+
+  removeElement() {
+    super.removeElement();
+
+    if (this.#datepickerFrom) {
+      this.#datepickerFrom.destroy();
+      this.#datepickerFrom = null;
+    }
+
+    if (this.#datepickerTo) {
+      this.#datepickerTo.destroy();
+      this.#datepickerTo = null;
+    }
   }
 
   _restoreHandlers() {
@@ -148,7 +167,53 @@ export default class EventEditView extends AbstractStatefulView {
 
     this.element.querySelector('.event__available-offers')
       ?.addEventListener('change', this.#offersChangeHandler);
+
+    this.#setDatepickers();
   }
+
+  #setDatepickers() {
+    const [dateFromInput, dateToInput] = this.element.querySelectorAll('.event__input--time');
+    
+    this.#datepickerFrom = flatpickr(
+      dateFromInput,
+      {
+        dateFormat: 'd/m/y H:i',
+        enableTime: true,
+        defaultDate: this._state.point.dateFrom,
+        onChange: this.#dateFromChangeHandler
+      }
+    );
+    
+    this.#datepickerTo = flatpickr(
+      dateToInput,
+      {
+        dateFormat: 'd/m/y H:i',
+        enableTime: true,
+        defaultDate: this._state.point.dateTo,
+        minDate: this._state.point.dateFrom,
+        onChange: this.#dateToChangeHandler
+      }
+    );
+  }
+
+  #dateFromChangeHandler = ([userDate]) => {
+    this._setState({
+      point: {
+        ...this._state.point,
+        dateFrom: userDate.toISOString()
+      }
+    });
+    this.#datepickerTo.set('minDate', userDate);
+  };
+
+  #dateToChangeHandler = ([userDate]) => {
+    this._setState({
+      point: {
+        ...this._state.point,
+        dateTo: userDate.toISOString()
+      }
+    });
+  };
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
