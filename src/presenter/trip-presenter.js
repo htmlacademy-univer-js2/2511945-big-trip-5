@@ -1,9 +1,10 @@
-import {render} from '../framework/render.js';
+import { render } from '../framework/render.js';
 import EventListView from '../view/event-list-view.js';
 import TripSortView from '../view/trip-sort-view.js';
 import EmptyListView from '../view/empty-list-view.js';
-import {generateSortItems, SORT_TYPES} from '../mock/sort.js';
+import { generateSortItems, SORT_TYPES } from '../mock/sort.js';
 import PointPresenter from './point-presenter.js';
+import EventCreateView from '../view/event-create-view.js';
 
 export default class TripPresenter {
   #eventListComponent = new EventListView();
@@ -11,24 +12,35 @@ export default class TripPresenter {
   #pointsModel = null;
   #pointPresenters = new Map();
   #currentSortType = SORT_TYPES.DAY;
-  #eventsListPoints = [];
   #sortComponent = null;
+  #eventCreateComponent = null;
+  #creatingPoint = null;
 
-  constructor({tripContainer, pointsModel}) {
+  constructor({ tripContainer, pointsModel }) {
     this.#tripContainer = tripContainer;
     this.#pointsModel = pointsModel;
   }
 
   init() {
-    this.#eventsListPoints = [...this.#pointsModel.getPoints()];
+    this.#renderTrip();
+  }
 
-    if (this.#eventsListPoints.length === 0) {
-      render(new EmptyListView(), this.#tripContainer);
+  #renderTrip() {
+    const points = this.#pointsModel.getFilteredPoints();
+
+    if (points.length === 0) {
+      this.#renderEmptyList();
       return;
     }
 
     this.#renderSort();
     this.#renderList();
+  }
+
+  #renderEmptyList() {
+    render(new EmptyListView({
+      filterType: this.#pointsModel.filterModel?.filter || 'everything'
+    }), this.#tripContainer);
   }
 
   #renderSort() {
@@ -58,7 +70,8 @@ export default class TripPresenter {
       container: this.#eventListComponent.element,
       point,
       onDataChange: this.#handlePointChange,
-      onModeChange: this.#handleModeChange
+      onModeChange: this.#handleModeChange,
+      onDeleteClick: this.#handleDeletePoint
     });
 
     pointPresenter.init();
@@ -76,31 +89,52 @@ export default class TripPresenter {
 
   #handlePointChange = (updatedPoint) => {
     this.#pointsModel.updatePoint(updatedPoint);
-    this.#eventsListPoints = this.#pointsModel.getPoints();
-    const presenter = this.#pointPresenters.get(updatedPoint.id);
-    presenter.init(updatedPoint);
+    this.#renderPoints();
   };
 
   #handleModeChange = () => {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
+    if (this.#creatingPoint) {
+      this.#creatingPoint.destroy();
+      this.#creatingPoint = null;
+    }
+  };
+
+  #handleDeletePoint = (pointId) => {
+    this.#pointsModel.deletePoint(pointId);
+    this.#renderTrip();
   };
 
   #getSortedPoints() {
-    const points = [...this.#eventsListPoints];
+    const points = [...this.#pointsModel.getFilteredPoints()];
 
     switch (this.#currentSortType) {
       case SORT_TYPES.DAY:
-        return points.sort((a, b) => new Date(a.dateFrom) - new Date(b.dateFrom));
+        return points.sort((a, b) => new Date(a.date_from) - new Date(b.date_from));
       case SORT_TYPES.TIME:
         return points.sort((a, b) => {
-          const durationA = new Date(a.dateTo) - new Date(a.dateFrom);
-          const durationB = new Date(b.dateTo) - new Date(b.dateFrom);
+          const durationA = new Date(a.date_to) - new Date(a.date_from);
+          const durationB = new Date(b.date_to) - new Date(b.date_from);
           return durationB - durationA;
         });
       case SORT_TYPES.PRICE:
-        return points.sort((a, b) => b.basePrice - a.basePrice);
+        return points.sort((a, b) => b.base_price - a.base_price);
       default:
         return points;
     }
+  }
+
+  createPoint() {
+    this.#handleModeChange();
+    this.#currentSortType = SORT_TYPES.DAY;
+    
+    this.#creatingPoint = new PointPresenter({
+      container: this.#eventListComponent.element,
+      onDataChange: this.#handlePointChange,
+      onModeChange: this.#handleModeChange,
+      onDeleteClick: this.#handleDeletePoint
+    });
+
+    this.#creatingPoint.init();
   }
 }

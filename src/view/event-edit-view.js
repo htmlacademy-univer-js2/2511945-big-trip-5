@@ -252,22 +252,35 @@ export default class EventEditView extends AbstractStatefulView {
 
   #destinationChangeHandler = (evt) => {
     const selectedDestination = mockDestinations.find((dest) => dest.name === evt.target.value);
-    if (selectedDestination) {
-      this.updateElement({
-        point: {
-          ...this._state.point,
-          destination: selectedDestination.id
-        },
-        destination: selectedDestination
-      });
+    if (!selectedDestination) {
+      evt.target.setCustomValidity('Please select a destination from the list');
+      evt.target.reportValidity();
+      return;
     }
+  
+    evt.target.setCustomValidity('');
+    this.updateElement({
+      point: {
+        ...this._state.point,
+        destination: selectedDestination.id
+      },
+      destination: selectedDestination
+    });
   };
 
   #priceChangeHandler = (evt) => {
+    const price = parseInt(evt.target.value, 10);
+    if (isNaN(price) || price <= 0) {
+      evt.target.setCustomValidity('Please enter a valid positive number');
+      evt.target.reportValidity();
+      return;
+    }
+  
+    evt.target.setCustomValidity('');
     this._setState({
       point: {
         ...this._state.point,
-        basePrice: parseInt(evt.target.value, 10)
+        basePrice: price
       }
     });
   };

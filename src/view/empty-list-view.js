@@ -8,13 +8,14 @@ const NoPointTextType = {
 };
 
 function createEmptyListTemplate(filterType) {
-  return `<p class="trip-events__msg">${NoPointTextType[filterType]}</p>`;
+  const textType = filterType in NoPointTextType ? filterType : 'everything';
+  return `<p class="trip-events__msg">${NoPointTextType[textType]}</p>`;
 }
 
 export default class EmptyListView extends AbstractView {
   #filterType;
 
-  constructor({filterType}) {
+  constructor({filterType = 'everything'} = {}) {
     super();
     this.#filterType = filterType;
   }
