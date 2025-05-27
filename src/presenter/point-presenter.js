@@ -1,112 +1,108 @@
-import {render, replace} from '../framework/render.js';
 import EventView from '../view/event-view.js';
 import EventEditView from '../view/event-edit-view.js';
+import { render, replace, remove } from '../framework/render.js';
 
 export default class PointPresenter {
-  #mode = 'default';
   #container = null;
   #point = null;
-  #onDataChange = null;
-  #onModeChange = null;
-  #pointComponent = null;
-  #pointEditComponent = null;
+  #destinations = [];
+  #offers = [];
+  #eventView = null;
+  #eventEditView = null;
+  #handleDataChange = null;
+  #handleModeChange = null;
+  #handleDeleteClick = null;
 
-  constructor({container, point, onDataChange, onModeChange}) {
+  constructor({ container, point, destinations, offers, onDataChange, onModeChange, onDeleteClick }) {
     this.#container = container;
     this.#point = point;
-    this.#onDataChange = onDataChange;
-    this.#onModeChange = onModeChange;
+    this.#destinations = destinations || [];
+    this.#offers = offers || [];
+    this.#handleDataChange = onDataChange;
+    this.#handleModeChange = onModeChange;
+    this.#handleDeleteClick = onDeleteClick;
   }
 
-  init(point = this.#point) {
+  init(point) {
     this.#point = point;
 
-    const prevPointComponent = this.#pointComponent;
-    const prevPointEditComponent = this.#pointEditComponent;
+    const prevEventView = this.#eventView;
+    const prevEventEditView = this.#eventEditView;
 
-    this.#pointComponent = new EventView({
+    this.#eventView = new EventView({
       point: this.#point,
-      onEditClick: this.#handleEditClick,
-      onFavoriteClick: this.#handleFavoriteClick
+      destinations: this.#destinations,
+      offers: this.#offers,
+      onEditClick: this.#handleEditClick
     });
 
-    this.#pointEditComponent = new EventEditView({
+    this.#eventEditView = new EventEditView({
       point: this.#point,
+      destinations: this.#destinations,
+      offers: this.#offers,
       onFormSubmit: this.#handleFormSubmit,
-      onCancelClick: this.#handleCancelClick
+      onCancelClick: this.#handleCancelClick,
+      onDeleteClick: this.#handleDeleteClick
     });
 
-    if (prevPointComponent === null || prevPointEditComponent === null) {
-      render(this.#pointComponent, this.#container);
+    if (prevEventView === null || prevEventEditView === null) {
+      render(this.#eventView, this.#container);
       return;
     }
 
-    if (this.#mode === 'default') {
-      replace(this.#pointComponent, prevPointComponent);
+    if (this.#container.contains(prevEventView.element)) {
+      replace(this.#eventView, prevEventView);
     }
 
-    if (this.#mode === 'edit') {
-      replace(this.#pointEditComponent, prevPointEditComponent);
+    if (this.#container.contains(prevEventEditView.element)) {
+      replace(this.#eventEditView, prevEventEditView);
     }
 
-    prevPointComponent.element.remove();
-    prevPointEditComponent.element.remove();
+    remove(prevEventView);
+    remove(prevEventEditView);
   }
 
   destroy() {
-    if (this.#pointComponent) {
-      this.#pointComponent.element.remove();
-      this.#pointComponent.removeElement();
-    }
-    if (this.#pointEditComponent) {
-      this.#pointEditComponent.element.remove();
-      this.#pointEditComponent.removeElement();
-    }
+    remove(this.#eventView);
+    remove(this.#eventEditView);
   }
 
   resetView() {
-    if (this.#mode !== 'default') {
-      this.#replaceFormToPoint();
+    if (this.#eventEditView) {
+      this.#eventEditView.reset(this.#point);
     }
   }
 
-  #replacePointToForm = () => {
-    replace(this.#pointEditComponent, this.#pointComponent);
-    document.addEventListener('keydown', this.#escKeyDownHandler);
-    this.#onModeChange();
-    this.#mode = 'edit';
+  #handleEditClick = () => {
+    this.#handleModeChange();
+    this.#replaceEventToEdit();
   };
 
-  #replaceFormToPoint = () => {
-    replace(this.#pointComponent, this.#pointEditComponent);
-    document.removeEventListener('keydown', this.#escKeyDownHandler);
-    this.#mode = 'default';
+  #handleCancelClick = () => {
+    this.#eventEditView.reset(this.#point);
+    this.#replaceEditToEvent();
   };
+
+  #handleFormSubmit = (updatedPoint) => {
+    this.#handleDataChange(updatedPoint);
+    this.#replaceEditToEvent();
+  };
+
+  #replaceEventToEdit() {
+    replace(this.#eventEditView, this.#eventView);
+    document.addEventListener('keydown', this.#escKeyDownHandler);
+  }
+
+  #replaceEditToEvent() {
+    replace(this.#eventView, this.#eventEditView);
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
+  }
 
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {
       evt.preventDefault();
-      this.#replaceFormToPoint();
+      this.#eventEditView.reset(this.#point);
+      this.#replaceEditToEvent();
     }
-  };
-
-  #handleEditClick = () => {
-    this.#replacePointToForm();
-  };
-
-  #handleFavoriteClick = () => {
-    this.#onDataChange({
-      ...this.#point,
-      isFavorite: !this.#point.isFavorite
-    });
-  };
-
-  #handleFormSubmit = (point) => {
-    this.#onDataChange(point);
-    this.#replaceFormToPoint();
-  };
-
-  #handleCancelClick = () => {
-    this.#replaceFormToPoint();
   };
 }

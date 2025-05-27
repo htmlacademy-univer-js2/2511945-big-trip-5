@@ -8,16 +8,25 @@ export default class PointModel {
   #points = Array.from({length: POINT_COUNT}, getRandomPoint);
   #destinations = mockDestinations;
   #offers = mockOffers;
+  #filterModel = null;
 
-  getPoints() {
+  constructor(filterModel) {
+    this.#filterModel = filterModel;
+  }
+
+  get points() {
     return this.#points;
   }
 
-  getDestinations() {
+  set points(newPoints) {
+    this.#points = newPoints;
+  }
+
+  get destinations() {
     return this.#destinations;
   }
 
-  getOffers() {
+  get offers() {
     return this.#offers;
   }
 
@@ -31,7 +40,7 @@ export default class PointModel {
 
   getOffersById(type, itemsId) {
     const offersType = this.getOffersByType(type);
-    return offersType.offers.filter((item) => itemsId.find((id) => item.id === id));
+    return offersType?.offers.filter((item) => itemsId.find((id) => item.id === id)) || [];
   }
 
   updatePoint(updatedPoint) {
@@ -46,5 +55,37 @@ export default class PointModel {
       updatedPoint,
       ...this.#points.slice(index + 1)
     ];
+  }
+
+  addPoint(newPoint) {
+    this.#points = [...this.#points, newPoint];
+  }
+
+  deletePoint(pointId) {
+    this.#points = this.#points.filter((point) => point.id !== pointId);
+  }
+
+  getFilteredPoints() {
+    const filterType = this.#filterModel?.filter;
+    if (!filterType || filterType === 'everything') {
+      return this.#points;
+    }
+
+    const now = new Date();
+    return this.#points.filter((point) => {
+      const dateFrom = new Date(point.date_from);
+      const dateTo = new Date(point.date_to);
+
+      switch (filterType) {
+        case 'future':
+          return dateFrom > now;
+        case 'present':
+          return dateFrom <= now && dateTo >= now;
+        case 'past':
+          return dateTo < now;
+        default:
+          return true;
+      }
+    });
   }
 }
