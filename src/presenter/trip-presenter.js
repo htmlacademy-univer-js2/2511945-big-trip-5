@@ -164,7 +164,6 @@ export default class TripPresenter {
     this.#filtersModel.setFilter(FilterType.EVERYTHING);
     this.#currentSortType = SortType.DAY;
 
-    // Создаем форму как первый элемент списка
     this.#eventCreateComponent = new EventCreateView({
       destinations: this.#pointsModel.getDestinations(),
       offers: this.#pointsModel.getOffers(),
@@ -172,7 +171,6 @@ export default class TripPresenter {
       onCancelClick: this.#handleCancelClick
     });
 
-    // Вставляем форму в начало списка
     this.#eventListComponent.element.prepend(this.#eventCreateComponent.element);
   };
 
