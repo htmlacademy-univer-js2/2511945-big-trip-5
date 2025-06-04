@@ -1,11 +1,21 @@
-export default class FilterModel {
+export default class FiltersModel {
   #filter = 'everything';
+  #observers = [];
 
   get filter() {
     return this.#filter;
   }
 
-  set filter(newFilter) {
-    this.#filter = newFilter;
+  setFilter(filter) {
+    this.#filter = filter;
+    this.#notifyObservers();
+  }
+
+  addObserver(observer) {
+    this.#observers.push(observer);
+  }
+
+  #notifyObservers() {
+    this.#observers.forEach((observer) => observer());
   }
 }

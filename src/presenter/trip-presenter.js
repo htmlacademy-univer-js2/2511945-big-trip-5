@@ -1,140 +1,196 @@
-import { render } from '../framework/render.js';
+import {render, remove} from '../framework/render.js';
 import EventListView from '../view/event-list-view.js';
 import TripSortView from '../view/trip-sort-view.js';
 import EmptyListView from '../view/empty-list-view.js';
-import { generateSortItems, SORT_TYPES } from '../mock/sort.js';
 import PointPresenter from './point-presenter.js';
 import EventCreateView from '../view/event-create-view.js';
+import {SortType, UserAction, UpdateType, FilterType} from '../const.js';
+import {generateSortItems} from '../mock/sort.js';
 
 export default class TripPresenter {
-  #eventListComponent = new EventListView();
-  #tripContainer = null;
+  #container = null;
   #pointsModel = null;
+  #filtersModel = null;
   #pointPresenters = new Map();
-  #currentSortType = SORT_TYPES.DAY;
+  #currentSortType = SortType.DAY;
+  #filterType = FilterType.EVERYTHING;
+  #eventListComponent = new EventListView();
   #sortComponent = null;
+  #noPointComponent = null;
   #eventCreateComponent = null;
-  #creatingPoint = null;
+  #newPointButton = null;
+  #isCreating = false;
 
-  constructor({ tripContainer, pointsModel }) {
-    this.#tripContainer = tripContainer;
+  constructor({container, pointsModel, filtersModel, newPointButton}) {
+    this.#container = container;
     this.#pointsModel = pointsModel;
+    this.#filtersModel = filtersModel;
+    this.#newPointButton = newPointButton;
+
+    this.#newPointButton.addEventListener('click', this.#handleNewPointButtonClick);
   }
 
   init() {
     this.#renderTrip();
   }
 
+  get points() {
+    this.#filterType = this.#filtersModel.getFilter();
+    const points = this.#pointsModel.getPoints(this.#filterType);
+    
+    switch (this.#currentSortType) {
+      case SortType.TIME:
+        return points.sort((a, b) => {
+          const durationA = new Date(a.dateTo) - new Date(a.dateFrom);
+          const durationB = new Date(b.dateTo) - new Date(b.dateFrom);
+          return durationB - durationA;
+        });
+      case SortType.PRICE:
+        return points.sort((a, b) => b.basePrice - a.basePrice);
+      case SortType.DAY:
+      default:
+        return points.sort((a, b) => new Date(a.dateFrom) - new Date(b.dateFrom));
+    }
+  }
+
   #renderTrip() {
-    const points = this.#pointsModel.getFilteredPoints();
+    const points = this.points;
+    const filterType = this.#filtersModel.getFilter();
+
+    this.#clearTrip();
 
     if (points.length === 0) {
-      this.#renderEmptyList();
+      this.#renderNoPoints(filterType);
       return;
     }
 
     this.#renderSort();
-    this.#renderList();
+    this.#renderEventList();
+    this.#renderPoints(points);
   }
 
-  #renderEmptyList() {
-    render(new EmptyListView({
-      filterType: this.#pointsModel.filterModel?.filter || 'everything'
-    }), this.#tripContainer);
+  #renderNoPoints(filterType) {
+    this.#noPointComponent = new EmptyListView({
+      filterType: filterType
+    });
+    render(this.#noPointComponent, this.#container);
   }
 
   #renderSort() {
     const sortItems = generateSortItems();
     this.#sortComponent = new TripSortView({
       sortItems,
+      currentSortType: this.#currentSortType,
       onSortTypeChange: this.#handleSortTypeChange
     });
-    render(this.#sortComponent, this.#tripContainer);
+    render(this.#sortComponent, this.#container);
   }
 
-  #renderList() {
-    render(this.#eventListComponent, this.#tripContainer);
-    this.#renderPoints();
+  #renderEventList() {
+    render(this.#eventListComponent, this.#container);
   }
 
   #renderPoints() {
-    this.#pointPresenters.forEach((presenter) => presenter.destroy());
-    this.#pointPresenters.clear();
-
-    const sortedPoints = this.#getSortedPoints();
-    sortedPoints.forEach((point) => this.#renderPoint(point));
+    this.points.forEach((point) => this.#renderPoint(point));
   }
 
   #renderPoint(point) {
     const pointPresenter = new PointPresenter({
       container: this.#eventListComponent.element,
-      point,
-      onDataChange: this.#handlePointChange,
-      onModeChange: this.#handleModeChange,
-      onDeleteClick: this.#handleDeletePoint
+      onDataChange: this.#handleViewAction,
+      onModeChange: this.#handleModeChange
     });
-
-    pointPresenter.init();
+    pointPresenter.init(point);
     this.#pointPresenters.set(point.id, pointPresenter);
   }
+
+  #clearTrip({resetSortType = false} = {}) {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+    remove(this.#sortComponent);
+    
+    if (this.#noPointComponent) {
+      remove(this.#noPointComponent);
+    }
+
+    if (resetSortType) {
+      this.#currentSortType = SortType.DAY;
+    }
+  }
+
+  #handleModeChange = () => {
+    if (this.#eventCreateComponent) {
+      this.#eventCreateComponent.element.remove();
+      this.#eventCreateComponent.removeElement();
+      this.#eventCreateComponent = null;
+      this.#isCreating = false;
+    }
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
+  };
+
+  #handleViewAction = (actionType, updateType, update) => {
+    switch (actionType) {
+      case UserAction.UPDATE_POINT:
+        this.#pointsModel.updatePoint(updateType, update);
+        break;
+      case UserAction.ADD_POINT:
+        this.#pointsModel.addPoint(updateType, update);
+        break;
+      case UserAction.DELETE_POINT:
+        this.#pointsModel.deletePoint(updateType, update);
+        break;
+    }
+
+    this.#clearTrip();
+    this.#renderTrip();
+  };
 
   #handleSortTypeChange = (sortType) => {
     if (this.#currentSortType === sortType) {
       return;
     }
-    
+
     this.#currentSortType = sortType;
-    this.#renderPoints();
-  };
-
-  #handlePointChange = (updatedPoint) => {
-    this.#pointsModel.updatePoint(updatedPoint);
-    this.#renderPoints();
-  };
-
-  #handleModeChange = () => {
-    this.#pointPresenters.forEach((presenter) => presenter.resetView());
-    if (this.#creatingPoint) {
-      this.#creatingPoint.destroy();
-      this.#creatingPoint = null;
-    }
-  };
-
-  #handleDeletePoint = (pointId) => {
-    this.#pointsModel.deletePoint(pointId);
+    this.#clearTrip();
     this.#renderTrip();
   };
 
-  #getSortedPoints() {
-    const points = [...this.#pointsModel.getFilteredPoints()];
-
-    switch (this.#currentSortType) {
-      case SORT_TYPES.DAY:
-        return points.sort((a, b) => new Date(a.date_from) - new Date(b.date_from));
-      case SORT_TYPES.TIME:
-        return points.sort((a, b) => {
-          const durationA = new Date(a.date_to) - new Date(a.date_from);
-          const durationB = new Date(b.date_to) - new Date(b.date_from);
-          return durationB - durationA;
-        });
-      case SORT_TYPES.PRICE:
-        return points.sort((a, b) => b.base_price - a.base_price);
-      default:
-        return points;
+  #handleNewPointButtonClick = () => {
+    if (this.#isCreating) {
+      return;
     }
-  }
 
-  createPoint() {
-    this.#handleModeChange();
-    this.#currentSortType = SORT_TYPES.DAY;
-    
-    this.#creatingPoint = new PointPresenter({
-      container: this.#eventListComponent.element,
-      onDataChange: this.#handlePointChange,
-      onModeChange: this.#handleModeChange,
-      onDeleteClick: this.#handleDeletePoint
+    this.#isCreating = true;
+    this.#filtersModel.setFilter(FilterType.EVERYTHING);
+    this.#currentSortType = SortType.DAY;
+
+    this.#eventCreateComponent = new EventCreateView({
+      destinations: this.#pointsModel.getDestinations(),
+      offers: this.#pointsModel.getOffers(),
+      onFormSubmit: this.#handleFormSubmit,
+      onCancelClick: this.#handleCancelClick
     });
 
-    this.#creatingPoint.init();
-  }
+    this.#eventListComponent.element.prepend(this.#eventCreateComponent.element);
+  };
+
+  #handleFormSubmit = (point) => {
+    this.#handleViewAction(
+      UserAction.ADD_POINT,
+      UpdateType.MAJOR,
+      point
+    );
+    this.#isCreating = false;
+  };
+
+  #handleCancelClick = () => {
+    this.#isCreating = false;
+    if (this.#eventCreateComponent) {
+      this.#eventCreateComponent.element.remove();
+      this.#eventCreateComponent.removeElement();
+      this.#eventCreateComponent = null;
+    }
+    this.#clearTrip();
+    this.#renderTrip();
+  };
 }
