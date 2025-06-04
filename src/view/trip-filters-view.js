@@ -1,31 +1,49 @@
-import AbstractView from "../framework/view/abstract-view.js"; 
+import AbstractView from '../framework/view/abstract-view.js';
 
-function createFiltersTemplate(filters) {
-  return `<div class="trip-controls__filters">
-    <h2 class="visually-hidden">Filter events</h2>
+function createFilterTemplate(filterItems, currentFilter) {
+  return `
     <form class="trip-filters" action="#" method="get">
-      ${filters.map(({ type, name, isDisabled }, index) => `
+      ${filterItems.map((filter) => `
         <div class="trip-filters__filter">
-          <input id="filter-${type}" class="trip-filters__filter-input visually-hidden"
-                 type="radio" name="trip-filter" value="${type}"
-                 ${index === 0 ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
-          <label class="trip-filters__filter-label" for="filter-${type}">${name}</label>
-        </div>`).join('')}
+          <input 
+            id="filter-${filter.type}" 
+            class="trip-filters__filter-input visually-hidden" 
+            type="radio" 
+            name="trip-filter" 
+            value="${filter.type}"
+            ${filter.type === currentFilter ? 'checked' : ''}
+          >
+          <label class="trip-filters__filter-label" for="filter-${filter.type}">
+            ${filter.name}
+          </label>
+        </div>
+      `).join('')}
       <button class="visually-hidden" type="submit">Accept filter</button>
     </form>
-  </div>
-  <button class="trip-main__event-add-btn btn btn--big btn--yellow" type="button">New event</button>`;
+  `;
 }
 
 export default class TripFiltersView extends AbstractView {
-  #filters = [];
+  #filterItems = null;
+  #currentFilter = null;
+  #handleFilterChange = null;
 
-  constructor(filters) {
+  constructor({filterItems, currentFilter, onFilterChange}) {
     super();
-    this.#filters = filters;
+    this.#filterItems = filterItems;
+    this.#currentFilter = currentFilter;
+    this.#handleFilterChange = onFilterChange;
+
+    this.element.addEventListener('change', this.#filterChangeHandler);
   }
 
   get template() {
-    return createFiltersTemplate(this.#filters);
+    return createFilterTemplate(this.#filterItems, this.#currentFilter);
   }
+
+  #filterChangeHandler = (evt) => {
+    if (evt.target.name === 'trip-filter') {
+      this.#handleFilterChange(evt.target.value);
+    }
+  };
 }
