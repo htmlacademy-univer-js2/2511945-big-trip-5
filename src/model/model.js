@@ -88,6 +88,37 @@ export default class PointModel {
     this.#observers.forEach((observer) => observer(updateType, data));
   }
 
+  async addPoint(updateType, update) {
+    try {
+      const response = await this.#apiService.addPoint(update);
+      const adaptedPoint = this.#adaptToClient(response);
+      
+      this.#points = [adaptedPoint, ...this.#points];
+      this.#notifyObservers(updateType, adaptedPoint);
+    } catch(err) {
+      throw new Error('Can\'t add point');
+    }
+  }
+
+  async deletePoint(updateType, update) {
+    const index = this.#points.findIndex((point) => point.id === update.id);
+    
+    if (index === -1) {
+      throw new Error('Can\'t delete unexisting point');
+    }
+    
+    try {
+      await this.#apiService.deletePoint(update);
+      this.#points = [
+        ...this.#points.slice(0, index),
+        ...this.#points.slice(index + 1)
+      ];
+      this.#notifyObservers(updateType);
+    } catch(err) {
+      throw new Error('Can\'t delete point');
+    }
+  }
+
   async updatePoint(updateType, updatedPoint) {
     const index = this.#points.findIndex((point) => point.id === updatedPoint.id);
     

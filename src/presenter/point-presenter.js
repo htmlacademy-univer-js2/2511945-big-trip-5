@@ -78,10 +78,39 @@ export default class PointPresenter {
     }
   }
 
-  setAborting() {
+  setSaving() {
     if (this.#mode === Mode.EDITING) {
-      this.#eventEditComponent.shake();
+      this.#eventEditComponent.updateElement({
+        isDisabled: true,
+        isSaving: true
+      });
     }
+  }
+
+  setDeleting() {
+    if (this.#mode === Mode.EDITING) {
+      this.#eventEditComponent.updateElement({
+        isDisabled: true,
+        isDeleting: true
+      });
+    }
+  }
+
+  setAborting() {
+    if (this.#mode === Mode.DEFAULT) {
+      this.#eventComponent.shake();
+      return;
+    }
+
+    const resetFormState = () => {
+      this.#eventEditComponent.updateElement({
+        isDisabled: false,
+        isSaving: false,
+        isDeleting: false
+      });
+    };
+
+    this.#eventEditComponent.shake(resetFormState);
   }
 
   #replaceEventToForm() {
@@ -129,6 +158,8 @@ export default class PointPresenter {
       this.#point.dateFrom !== update.dateFrom ||
       this.#point.dateTo !== update.dateTo;
 
+    this.setSaving();
+    
     this.#handleDataChange(
       UserAction.UPDATE_POINT,
       isMinorUpdate ? UpdateType.MINOR : UpdateType.PATCH,
@@ -139,6 +170,8 @@ export default class PointPresenter {
   };
 
   #handleDeleteClick = (point) => {
+    this.setDeleting();
+    
     this.#handleDataChange(
       UserAction.DELETE_POINT,
       UpdateType.MINOR,
