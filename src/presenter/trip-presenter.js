@@ -109,6 +109,8 @@ export default class TripPresenter {
   #renderPoint(point) {
     const pointPresenter = new PointPresenter({
       container: this.#eventListComponent.element,
+      destinations: this.#pointsModel.getDestinations(),
+      offers: this.#pointsModel.getOffers(),
       onDataChange: this.#handleViewAction,
       onModeChange: this.#handleModeChange
     });
@@ -154,8 +156,11 @@ export default class TripPresenter {
           break;
       }
     } catch (err) {
-      // Обработка ошибки, если нужно
-      console.error('Error handling user action:', err);
+      const presenter = this.#pointPresenters.get(update.id);
+      if (presenter) {
+        presenter.setAborting();
+      }
+      throw err;
     }
   };
 
