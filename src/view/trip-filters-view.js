@@ -1,9 +1,9 @@
 import AbstractView from '../framework/view/abstract-view.js';
 
-function createFiltersTemplate(filters = []) {
+function createFilterTemplate(filterItems, currentFilter) {
   return `
     <form class="trip-filters" action="#" method="get">
-      ${filters.map((filter) => `
+      ${filterItems.map((filter) => `
         <div class="trip-filters__filter">
           <input 
             id="filter-${filter.type}" 
@@ -11,7 +11,7 @@ function createFiltersTemplate(filters = []) {
             type="radio" 
             name="trip-filter" 
             value="${filter.type}"
-            ${filter.isChecked ? 'checked' : ''}
+            ${filter.type === currentFilter ? 'checked' : ''}
           >
           <label class="trip-filters__filter-label" for="filter-${filter.type}">
             ${filter.name}
@@ -24,18 +24,21 @@ function createFiltersTemplate(filters = []) {
 }
 
 export default class TripFiltersView extends AbstractView {
-  #filters = [];
+  #filterItems = null;
+  #currentFilter = null;
   #handleFilterChange = null;
 
-  constructor({ filters, onFilterChange }) {
+  constructor({filterItems, currentFilter, onFilterChange}) {
     super();
-    this.#filters = filters || [];
+    this.#filterItems = filterItems;
+    this.#currentFilter = currentFilter;
     this.#handleFilterChange = onFilterChange;
+
     this.element.addEventListener('change', this.#filterChangeHandler);
   }
 
   get template() {
-    return createFiltersTemplate(this.#filters);
+    return createFilterTemplate(this.#filterItems, this.#currentFilter);
   }
 
   #filterChangeHandler = (evt) => {

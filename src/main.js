@@ -1,32 +1,38 @@
 import TripPresenter from './presenter/trip-presenter.js';
+import PointModel, {FiltersModel} from './model/model.js';
+import {render} from './framework/render.js';
 import FilterPresenter from './presenter/filter-presenter.js';
-import { render } from './framework/render.js';
-import PointModel from './model/model.js';
-import FilterModel from './model/filter-model.js';
-import { generateFilterItems } from './mock/filter.js';
+import ApiService from './api.js';
 
-const filtersElement = document.querySelector('.trip-controls__filters');
-const tripEvents = document.querySelector('.trip-events');
-const newEventButton = document.querySelector('.trip-main__event-add-btn');
+const siteMainElement = document.querySelector('.trip-events');
+const siteHeaderElement = document.querySelector('.trip-main');
+const siteFiltersElement = document.querySelector('.trip-controls__filters');
+const newPointButton = document.querySelector('.trip-main__event-add-btn');
 
-const filterModel = new FilterModel();
-const pointsModel = new PointModel(filterModel);
+const apiService = new ApiService();
+const pointsModel = new PointModel({apiService});
+const filtersModel = new FiltersModel();
 
 const tripPresenter = new TripPresenter({
-  tripContainer: tripEvents,
-  pointsModel: pointsModel,
+  container: siteMainElement,
+  pointsModel,
+  filtersModel,
+  newPointButton
 });
 
 const filterPresenter = new FilterPresenter({
-  filterContainer: filtersElement,
-  filterModel: filterModel,
-  pointsModel: pointsModel
+  filterContainer: siteFiltersElement,
+  filtersModel,
+  pointsModel
 });
 
-filterPresenter.init();
-tripPresenter.init();
-
-newEventButton.addEventListener('click', (evt) => {
-  evt.preventDefault();
-  tripPresenter.createPoint();
-});
+pointsModel.init()
+  .then(() => {
+    filterPresenter.init();
+    tripPresenter.init();
+  })
+  .catch(() => {
+    filterPresenter.init();
+    tripPresenter.init();
+  });
+  

@@ -1,39 +1,31 @@
+import {generateFilterItems} from '../mock/filter.js';
 import TripFiltersView from '../view/trip-filters-view.js';
-import { render } from '../framework/render.js';
-import { generateFilterItems } from '../mock/filter.js';
+import {render} from '../framework/render.js';
 
 export default class FilterPresenter {
   #filterContainer = null;
-  #filterModel = null;
+  #filtersModel = null;
   #pointsModel = null;
+  #filterComponent = null;
 
-  constructor({ filterContainer, filterModel, pointsModel }) {
+  constructor({filterContainer, filtersModel, pointsModel}) {
     this.#filterContainer = filterContainer;
-    this.#filterModel = filterModel;
+    this.#filtersModel = filtersModel;
     this.#pointsModel = pointsModel;
   }
 
   init() {
-    const filterItems = generateFilterItems().map((item) => ({
-      ...item,
-      isChecked: item.type === this.#filterModel.filter
-    }));
+    const filterItems = generateFilterItems();
+    this.#filterComponent = new TripFiltersView({
+      filterItems,
+      currentFilter: this.#filtersModel.filter,
+      onFilterChange: this.#handleFilterChange
+    });
 
-    this.#renderFilters(filterItems);
-  }
-
-  #renderFilters(filters) {
-    render(
-      new TripFiltersView({
-        filters: Array.isArray(filters) ? filters : [],
-        onFilterChange: this.#handleFilterChange
-      }),
-      this.#filterContainer
-    );
+    render(this.#filterComponent, this.#filterContainer);
   }
 
   #handleFilterChange = (filterType) => {
-    this.#filterModel.filter = filterType;
-    this.#pointsModel.points = this.#pointsModel.getFilteredPoints();
+    this.#filtersModel.setFilter(filterType);
   };
 }

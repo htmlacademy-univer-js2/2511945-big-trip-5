@@ -1,91 +1,124 @@
-import { getRandomPoint } from "../mock/points.js";
-import { mockDestinations } from "../mock/destinations.js";
-import { mockOffers } from "../mock/offers.js";
+import {UpdateType} from '../const.js';
 
-const POINT_COUNT = 3;
+export class FiltersModel {
+  #filter = 'everything';
+  #observers = [];
+
+  get filter() {
+    return this.#filter;
+  }
+
+  setFilter(filter) {
+    this.#filter = filter;
+    this.#notifyObservers();
+  }
+
+  addObserver(observer) {
+    this.#observers.push(observer);
+  }
+
+  #notifyObservers() {
+    this.#observers.forEach((observer) => observer());
+  }
+}
 
 export default class PointModel {
-  #points = Array.from({length: POINT_COUNT}, getRandomPoint);
-  #destinations = mockDestinations;
-  #offers = mockOffers;
-  #filterModel = null;
+  #points = [];
+  #destinations = [];
+  #offers = [];
+  #observers = [];
+  #apiService = null;
+  #isLoading = true;
 
-  constructor(filterModel) {
-    this.#filterModel = filterModel;
+  constructor({apiService}) {
+    this.#apiService = apiService;
   }
 
-  get points() {
-    return this.#points;
+  get isLoading() {
+    return this.#isLoading;
   }
 
-  set points(newPoints) {
-    this.#points = newPoints;
+  async init() {
+    try {
+      const data = await this.#apiService.init();
+      this.#points = data.points.map(this.#adaptToClient);
+      this.#destinations = data.destinations;
+      this.#offers = data.offers;
+      this.#isLoading = false;
+    } catch(err) {
+      this.#points = [];
+      this.#destinations = [];
+      this.#offers = [];
+      this.#isLoading = false;
+      throw new Error('Failed to load data');
+    }
+
+    this.#notifyObservers(UpdateType.INIT);
   }
 
-  get destinations() {
+  getPoints(filterType = 'everything') {
+    const now = new Date();
+    
+    switch (filterType) {
+      case 'future':
+        return this.#points.filter((point) => new Date(point.dateFrom) > now);
+      case 'present':
+        return this.#points.filter((point) => 
+          new Date(point.dateFrom) <= now && new Date(point.dateTo) >= now);
+      case 'past':
+        return this.#points.filter((point) => new Date(point.dateTo) < now);
+      default:
+        return [...this.#points];
+    }
+  }
+
+  getDestinations() {
     return this.#destinations;
   }
 
-  get offers() {
+  getOffers() {
     return this.#offers;
   }
 
-  getDestinationsById(id) {
-    return this.#destinations.find((item) => item.id === id);
+  addObserver(observer) {
+    this.#observers.push(observer);
   }
 
-  getOffersByType(type) {
-    return this.#offers.find((item) => item.type === type);
+  #notifyObservers(updateType, data) {
+    this.#observers.forEach((observer) => observer(updateType, data));
   }
 
-  getOffersById(type, itemsId) {
-    const offersType = this.getOffersByType(type);
-    return offersType?.offers.filter((item) => itemsId.find((id) => item.id === id)) || [];
-  }
-
-  updatePoint(updatedPoint) {
+  async updatePoint(updateType, updatedPoint) {
     const index = this.#points.findIndex((point) => point.id === updatedPoint.id);
     
     if (index === -1) {
-      return;
+      throw new Error('Can\'t update unexisting point');
     }
     
-    this.#points = [
-      ...this.#points.slice(0, index),
-      updatedPoint,
-      ...this.#points.slice(index + 1)
-    ];
-  }
+    try {
+      const response = await this.#apiService.updatePoint(updatedPoint);
+      const adaptedPoint = this.#adaptToClient(response);
+      
+      this.#points = [
+        ...this.#points.slice(0, index),
+        adaptedPoint,
+        ...this.#points.slice(index + 1)
+      ];
 
-  addPoint(newPoint) {
-    this.#points = [...this.#points, newPoint];
-  }
-
-  deletePoint(pointId) {
-    this.#points = this.#points.filter((point) => point.id !== pointId);
-  }
-
-  getFilteredPoints() {
-    const filterType = this.#filterModel?.filter;
-    if (!filterType || filterType === 'everything') {
-      return this.#points;
+      this.#notifyObservers(updateType, adaptedPoint);
+      return adaptedPoint;
+    } catch(err) {
+      throw new Error('Can\'t update point');
     }
+  }
 
-    const now = new Date();
-    return this.#points.filter((point) => {
-      const dateFrom = new Date(point.date_from);
-      const dateTo = new Date(point.date_to);
+  #adaptToClient(point) {
+    const adaptedPoint = {
+      ...point,
+      isFavorite: point.isFavorite || false,
+      offers: point.offers || []
+    };
 
-      switch (filterType) {
-        case 'future':
-          return dateFrom > now;
-        case 'present':
-          return dateFrom <= now && dateTo >= now;
-        case 'past':
-          return dateTo < now;
-        default:
-          return true;
-      }
-    });
+    return adaptedPoint;
   }
 }
