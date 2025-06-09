@@ -116,7 +116,6 @@ export default class TripPresenter {
       });
       render(this.#tripInfoComponent, this.#container.parentElement.querySelector('.trip-main'), 'afterbegin');
     } else {
-    // Проверяем, что компонент существует и имеет метод updateElement
       if (this.#tripInfoComponent && typeof this.#tripInfoComponent.updateElement === 'function') {
         this.#tripInfoComponent.updateElement({
           destinations,

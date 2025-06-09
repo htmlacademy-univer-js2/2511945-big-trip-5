@@ -62,6 +62,6 @@ export default class TripInfoView extends AbstractView {
     this.#dateFrom = dateFrom;
     this.#dateTo = dateTo;
     this.#cost = cost;
-    super.updateElement(); // Вызываем родительский метод
+    super.updateElement();
   }
 }

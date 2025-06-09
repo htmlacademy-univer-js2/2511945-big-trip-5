@@ -1,4 +1,3 @@
-// model.js
 import {UpdateType, FilterType} from '../const.js';
 
 export class FiltersModel {

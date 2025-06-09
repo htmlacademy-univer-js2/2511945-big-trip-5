@@ -1,4 +1,3 @@
-// api.js
 import { UpdateType } from './const.js';
 
 const AUTHORIZATION = 'Basic eo0w590ik29889b';
