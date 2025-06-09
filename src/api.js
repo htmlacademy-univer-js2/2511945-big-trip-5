@@ -4,95 +4,99 @@ const AUTHORIZATION = 'Basic eo0w590ik29889b';
 const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';
 
 export default class ApiService {
-  #points = [];
-  #destinations = [];
-  #offers = [];
-
   constructor() {
-    this.#points = [];
-    this.#destinations = [];
-    this.#offers = [];
+    this._points = [];
+    this._destinations = [];
+    this._offers = [];
   }
 
   async init() {
     try {
       const [points, destinations, offers] = await Promise.all([
-        this.#loadPoints(),
-        this.#loadDestinations(),
-        this.#loadOffers()
+        this._loadPoints(),
+        this._loadDestinations(),
+        this._loadOffers()
       ]);
 
-      this.#points = points;
-      this.#destinations = destinations;
-      this.#offers = offers;
+      this._points = points;
+      this._destinations = destinations;
+      this._offers = offers;
 
       return {
-        points: this.#points,
-        destinations: this.#destinations,
-        offers: this.#offers
+        points: this._points,
+        destinations: this._destinations,
+        offers: this._offers
       };
     } catch (err) {
-      this.#points = [];
-      this.#destinations = [];
-      this.#offers = [];
       throw new Error('Failed to load data from server');
     }
   }
 
-  async #loadPoints() {
-    const response = await this.#sendRequest({
+  async getPoints() {
+    return this._points;
+  }
+
+  async getDestinations() {
+    return this._destinations;
+  }
+
+  async getOffers() {
+    return this._offers;
+  }
+
+  async addPoint(point) {
+    const response = await this._sendRequest({
+      url: 'points',
+      method: 'POST',
+      body: JSON.stringify(this._adaptToServer(point)),
+      headers: new Headers({'Content-Type': 'application/json'})
+    });
+
+    return this._adaptToClient(response);
+  }
+
+  async updatePoint(point) {
+    const response = await this._sendRequest({
+      url: `points/${point.id}`,
+      method: 'PUT',
+      body: JSON.stringify(this._adaptToServer(point)),
+      headers: new Headers({'Content-Type': 'application/json'})
+    });
+
+    return this._adaptToClient(response);
+  }
+
+  async deletePoint(point) {
+    await this._sendRequest({
+      url: `points/${point.id}`,
+      method: 'DELETE'
+    });
+  }
+
+  async _loadPoints() {
+    const response = await this._sendRequest({
       url: 'points',
       method: 'GET'
     });
 
-    return response.map(this.#adaptToClient);
+    return response.map(this._adaptToClient);
   }
 
-  async #loadDestinations() {
-    return await this.#sendRequest({
+  async _loadDestinations() {
+    return await this._sendRequest({
       url: 'destinations',
       method: 'GET'
     });
   }
 
-  async #loadOffers() {
-    return await this.#sendRequest({
+  async _loadOffers() {
+    return await this._sendRequest({
       url: 'offers',
       method: 'GET'
     });
   }
 
-  async addPoint(point) {
-    const response = await this.#sendRequest({
-      url: 'points',
-      method: 'POST',
-      body: JSON.stringify(this.#adaptToServer(point)),
-      headers: new Headers({'Content-Type': 'application/json'})
-    });
-
-    return this.#adaptToClient(response);
-  }
-
-  async updatePoint(update) {
-    const response = await this.#sendRequest({
-      url: `points/${update.id.replace('#', '')}`,
-      method: 'PUT',
-      body: JSON.stringify(this.#adaptToServer(update)),
-      headers: new Headers({'Content-Type': 'application/json'})
-    });
-
-    const updatedPoint = this.#adaptToClient(response);
-    return updatedPoint;
-  }
-
-  async deletePoint(update) {
-    await this.#sendRequest({
-      url: `points/${update.id}`,
-      method: 'DELETE'
-    });
-  }
-
-  async #sendRequest({url, method = 'GET', body = null, headers = new Headers()}) {
+  async _sendRequest({url, method = 'GET', body = null, headers = new Headers()}) {
     headers.append('Authorization', AUTHORIZATION);
 
     const response = await fetch(`${END_POINT}/${url}`, {method, body, headers});
@@ -104,7 +108,7 @@ export default class ApiService {
     return await response.json();
   }
 
-  #adaptToClient(point) {
+  _adaptToClient(point) {
     const adaptedPoint = {
       ...point,
       basePrice: point['base_price'],
@@ -121,7 +125,7 @@ export default class ApiService {
     return adaptedPoint;
   }
 
-  #adaptToServer(point) {
+  _adaptToServer(point) {
     const adaptedPoint = {
       ...point,
       'base_price': point.basePrice,

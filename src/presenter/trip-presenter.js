@@ -6,7 +6,6 @@ import PointPresenter from './point-presenter.js';
 import EventCreateView from '../view/event-create-view.js';
 import TripInfoView from '../view/trip-info-view.js';
 import {SortType, UserAction, UpdateType, FilterType} from '../const.js';
-import {generateSortItems} from '../mock/sort.js';
 
 export default class TripPresenter {
   #container = null;
@@ -40,7 +39,7 @@ export default class TripPresenter {
 
   get points() {
     this.#filterType = this.#filtersModel.filter;
-    const points = this.#pointsModel.getPoints(this.#filterType);
+    const points = this.#pointsModel.getFilteredPoints(this.#filterType);
     
     switch (this.#currentSortType) {
       case SortType.TIME:
@@ -63,13 +62,13 @@ export default class TripPresenter {
 
     this.#clearTrip();
 
-    if (points.length === 0 && !this.#pointsModel.isLoading) {
-      this.#renderNoPoints(filterType);
+    if (this.#pointsModel.isLoading) {
+      this.#renderLoading();
       return;
     }
 
-    if (this.#pointsModel.isLoading) {
-      this.#renderLoading();
+    if (points.length === 0) {
+      this.#renderNoPoints(filterType);
       return;
     }
 
@@ -92,7 +91,7 @@ export default class TripPresenter {
   }
 
   #renderTripInfo() {
-    const points = this.#pointsModel.getPoints();
+    const points = this.#pointsModel.points;
   
     if (points.length === 0) {
       if (this.#tripInfoComponent) {
@@ -116,20 +115,19 @@ export default class TripPresenter {
       });
       render(this.#tripInfoComponent, this.#container.parentElement.querySelector('.trip-main'), 'afterbegin');
     } else {
-      if (this.#tripInfoComponent && typeof this.#tripInfoComponent.updateElement === 'function') {
-        this.#tripInfoComponent.updateElement({
-          destinations,
-          dateFrom,
-          dateTo,
-          cost
-        });
-      }
+      this.#tripInfoComponent.updateElement({
+        destinations,
+        dateFrom,
+        dateTo,
+        cost
+      });
     }
   }
+
   #getDestinationsString(points) {
     const destinations = points
       .map((point) => {
-        const destination = this.#pointsModel.getDestinations().find((d) => d.id === point.destination);
+        const destination = this.#pointsModel.destinations.find((d) => d.id === point.destination);
         return destination ? destination.name : '';
       })
       .filter(Boolean);
@@ -145,7 +143,7 @@ export default class TripPresenter {
 
   #calculateTotalCost(points) {
     return points.reduce((total, point) => {
-      const pointOffers = this.#pointsModel.getOffers()
+      const pointOffers = this.#pointsModel.offers
         .find((offer) => offer.type === point.type)?.offers || [];
       
       const offersCost = pointOffers
@@ -157,7 +155,14 @@ export default class TripPresenter {
   }
 
   #renderSort() {
-    const sortItems = generateSortItems();
+    const sortItems = [
+      { type: SortType.DAY, name: 'Day', isDisabled: false, isChecked: this.#currentSortType === SortType.DAY },
+      { type: SortType.EVENT, name: 'Event', isDisabled: true, isChecked: this.#currentSortType === SortType.EVENT },
+      { type: SortType.TIME, name: 'Time', isDisabled: false, isChecked: this.#currentSortType === SortType.TIME },
+      { type: SortType.PRICE, name: 'Price', isDisabled: false, isChecked: this.#currentSortType === SortType.PRICE },
+      { type: SortType.OFFERS, name: 'Offers', isDisabled: true, isChecked: this.#currentSortType === SortType.OFFERS }
+    ];
+
     this.#sortComponent = new TripSortView({
       sortItems,
       currentSortType: this.#currentSortType,
@@ -177,8 +182,8 @@ export default class TripPresenter {
   #renderPoint(point) {
     const pointPresenter = new PointPresenter({
       container: this.#eventListComponent.element,
-      destinations: this.#pointsModel.getDestinations(),
-      offers: this.#pointsModel.getOffers(),
+      destinations: this.#pointsModel.destinations,
+      offers: this.#pointsModel.offers,
       onDataChange: this.#handleViewAction,
       onModeChange: this.#handleModeChange
     });
@@ -273,8 +278,8 @@ export default class TripPresenter {
     this.#currentSortType = SortType.DAY;
 
     this.#eventCreateComponent = new EventCreateView({
-      destinations: this.#pointsModel.getDestinations(),
-      offers: this.#pointsModel.getOffers(),
+      destinations: this.#pointsModel.destinations,
+      offers: this.#pointsModel.offers,
       onFormSubmit: this.#handleFormSubmit,
       onCancelClick: this.#handleCancelClick
     });

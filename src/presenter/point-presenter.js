@@ -21,8 +21,8 @@ export default class PointPresenter {
 
   constructor({container, destinations, offers, onDataChange, onModeChange}) {
     this.#container = container;
-    this.#destinations = destinations || [];
-    this.#offers = offers || [];
+    this.#destinations = destinations;
+    this.#offers = offers;
     this.#handleDataChange = onDataChange;
     this.#handleModeChange = onModeChange;
   }
