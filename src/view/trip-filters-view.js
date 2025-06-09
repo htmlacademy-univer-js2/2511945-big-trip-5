@@ -12,8 +12,12 @@ function createFilterTemplate(filterItems, currentFilter) {
             name="trip-filter" 
             value="${filter.type}"
             ${filter.type === currentFilter ? 'checked' : ''}
+            ${filter.isDisabled ? 'disabled' : ''}
           >
-          <label class="trip-filters__filter-label" for="filter-${filter.type}">
+          <label 
+            class="trip-filters__filter-label ${filter.isDisabled ? 'trip-filters__filter-label--disabled' : ''}" 
+            for="filter-${filter.type}"
+          >
             ${filter.name}
           </label>
         </div>
@@ -41,8 +45,14 @@ export default class TripFiltersView extends AbstractView {
     return createFilterTemplate(this.#filterItems, this.#currentFilter);
   }
 
+  updateElement({filterItems, currentFilter}) {
+    this.#filterItems = filterItems;
+    this.#currentFilter = currentFilter;
+    super.updateElement();
+  }
+
   #filterChangeHandler = (evt) => {
-    if (evt.target.name === 'trip-filter') {
+    if (evt.target.name === 'trip-filter' && !evt.target.disabled) {
       this.#handleFilterChange(evt.target.value);
     }
   };

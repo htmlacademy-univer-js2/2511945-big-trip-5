@@ -4,6 +4,7 @@ import TripSortView from '../view/trip-sort-view.js';
 import EmptyListView from '../view/empty-list-view.js';
 import PointPresenter from './point-presenter.js';
 import EventCreateView from '../view/event-create-view.js';
+import TripInfoView from '../view/trip-info-view.js';
 import {SortType, UserAction, UpdateType, FilterType} from '../const.js';
 import {generateSortItems} from '../mock/sort.js';
 
@@ -18,6 +19,7 @@ export default class TripPresenter {
   #sortComponent = null;
   #noPointComponent = null;
   #eventCreateComponent = null;
+  #tripInfoComponent = null;
   #newPointButton = null;
   #isCreating = false;
 
@@ -42,16 +44,16 @@ export default class TripPresenter {
     
     switch (this.#currentSortType) {
       case SortType.TIME:
-        return points.sort((a, b) => {
+        return [...points].sort((a, b) => {
           const durationA = new Date(a.dateTo) - new Date(a.dateFrom);
           const durationB = new Date(b.dateTo) - new Date(b.dateFrom);
           return durationB - durationA;
         });
       case SortType.PRICE:
-        return points.sort((a, b) => b.basePrice - a.basePrice);
+        return [...points].sort((a, b) => b.basePrice - a.basePrice);
       case SortType.DAY:
       default:
-        return points.sort((a, b) => new Date(a.dateFrom) - new Date(b.dateFrom));
+        return [...points].sort((a, b) => new Date(a.dateFrom) - new Date(b.dateFrom));
     }
   }
 
@@ -71,6 +73,7 @@ export default class TripPresenter {
       return;
     }
 
+    this.#renderTripInfo();
     this.#renderSort();
     this.#renderEventList();
     this.#renderPoints(points);
@@ -86,6 +89,72 @@ export default class TripPresenter {
       filterType: filterType
     });
     render(this.#noPointComponent, this.#container);
+  }
+
+  #renderTripInfo() {
+    const points = this.#pointsModel.getPoints();
+  
+    if (points.length === 0) {
+      if (this.#tripInfoComponent) {
+        remove(this.#tripInfoComponent);
+        this.#tripInfoComponent = null;
+      }
+      return;
+    }
+
+    const destinations = this.#getDestinationsString(points);
+    const dateFrom = points[0].dateFrom;
+    const dateTo = points[points.length - 1].dateTo;
+    const cost = this.#calculateTotalCost(points);
+
+    if (!this.#tripInfoComponent) {
+      this.#tripInfoComponent = new TripInfoView({
+        destinations,
+        dateFrom,
+        dateTo,
+        cost
+      });
+      render(this.#tripInfoComponent, this.#container.parentElement.querySelector('.trip-main'), 'afterbegin');
+    } else {
+    // Проверяем, что компонент существует и имеет метод updateElement
+      if (this.#tripInfoComponent && typeof this.#tripInfoComponent.updateElement === 'function') {
+        this.#tripInfoComponent.updateElement({
+          destinations,
+          dateFrom,
+          dateTo,
+          cost
+        });
+      }
+    }
+  }
+  #getDestinationsString(points) {
+    const destinations = points
+      .map((point) => {
+        const destination = this.#pointsModel.getDestinations().find((d) => d.id === point.destination);
+        return destination ? destination.name : '';
+      })
+      .filter(Boolean);
+
+    if (destinations.length === 0) {
+      return '';
+    }
+    if (destinations.length <= 3) {
+      return destinations.join(' — ');
+    }
+    return `${destinations[0]} — ... — ${destinations[destinations.length - 1]}`;
+  }
+
+  #calculateTotalCost(points) {
+    return points.reduce((total, point) => {
+      const pointOffers = this.#pointsModel.getOffers()
+        .find((offer) => offer.type === point.type)?.offers || [];
+      
+      const offersCost = pointOffers
+        .filter((offer) => point.offers.includes(offer.id))
+        .reduce((sum, offer) => sum + offer.price, 0);
+      
+      return total + point.basePrice + offersCost;
+    }, 0);
   }
 
   #renderSort() {
@@ -168,6 +237,7 @@ export default class TripPresenter {
     switch (updateType) {
       case UpdateType.PATCH:
         this.#pointPresenters.get(data.id)?.init(data);
+        this.#renderTripInfo();
         break;
       case UpdateType.MINOR:
         this.#clearTrip();

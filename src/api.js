@@ -1,3 +1,4 @@
+// api.js
 import { UpdateType } from './const.js';
 
 const AUTHORIZATION = 'Basic eo0w590ik29889b';
@@ -62,9 +63,20 @@ export default class ApiService {
     });
   }
 
+  async addPoint(point) {
+    const response = await this.#sendRequest({
+      url: 'points',
+      method: 'POST',
+      body: JSON.stringify(this.#adaptToServer(point)),
+      headers: new Headers({'Content-Type': 'application/json'})
+    });
+
+    return this.#adaptToClient(response);
+  }
+
   async updatePoint(update) {
     const response = await this.#sendRequest({
-      url: `points/${update.id}`,
+      url: `points/${update.id.replace('#', '')}`,
       method: 'PUT',
       body: JSON.stringify(this.#adaptToServer(update)),
       headers: new Headers({'Content-Type': 'application/json'})
@@ -74,21 +86,9 @@ export default class ApiService {
     return updatedPoint;
   }
 
-  async addPoint(point) {
-    const response = await this.#sendRequest({
-      url: 'points',
-      method: 'POST',
-      body: JSON.stringify(this.#adaptToServer(point)),
-      headers: new Headers({'Content-Type': 'application/json'})
-    });
-
-    const newPoint = this.#adaptToClient(response);
-    return newPoint;
-  }
-
-  async deletePoint(point) {
+  async deletePoint(update) {
     await this.#sendRequest({
-      url: `points/${point.id}`,
+      url: `points/${update.id}`,
       method: 'DELETE'
     });
   }
