@@ -1,7 +1,7 @@
-import {UpdateType} from '../const.js';
+import {UpdateType, FilterType} from '../const.js';
 
 export class FiltersModel {
-  #filter = 'everything';
+  #filter = FilterType.EVERYTHING;
   #observers = [];
 
   get filter() {
@@ -56,16 +56,16 @@ export default class PointModel {
     this.#notifyObservers(UpdateType.INIT);
   }
 
-  getPoints(filterType = 'everything') {
+  getPoints(filterType = FilterType.EVERYTHING) {
     const now = new Date();
     
     switch (filterType) {
-      case 'future':
+      case FilterType.FUTURE:
         return this.#points.filter((point) => new Date(point.dateFrom) > now);
-      case 'present':
+      case FilterType.PRESENT:
         return this.#points.filter((point) => 
           new Date(point.dateFrom) <= now && new Date(point.dateTo) >= now);
-      case 'past':
+      case FilterType.PAST:
         return this.#points.filter((point) => new Date(point.dateTo) < now);
       default:
         return [...this.#points];
