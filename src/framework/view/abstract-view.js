@@ -47,21 +47,6 @@ export default class AbstractView {
   }
 
   /**
-   * Метод для обновления элемента
-   */
-  updateElement() {
-    const prevElement = this.element;
-    const parent = prevElement.parentElement;
-    this.removeElement();
-
-    const newElement = this.element;
-
-    if (parent && newElement) {
-      parent.replaceChild(newElement, prevElement);
-    }
-  }
-
-  /**
    * Метод, реализующий эффект "покачивания головой"
    * @param {shakeCallback} [callback] Функция, которая будет вызвана после завершения анимации
    */
