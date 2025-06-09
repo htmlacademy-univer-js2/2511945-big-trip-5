@@ -9,6 +9,7 @@ function createEventEditTemplate(state) {
   const { point = {}, destination, offers, isDisabled, isSaving, isDeleting } = state;
   const allOffers = mockOffers.find((offer) => offer.type === point.type)?.offers || [];
   const destinationData = mockDestinations.find((dest) => dest.id === point.destination) || destination;
+  const destinationName = destinationData?.name || '';
 
   return `<li class="trip-events__item">
             <form class="event event--edit" action="#" method="post">

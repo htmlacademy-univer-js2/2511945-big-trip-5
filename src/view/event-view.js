@@ -10,7 +10,7 @@ dayjs.extend(relativeTime);
 
 function createEventTemplate(point) {
   const destinationData = mockDestinations.find(dest => dest.id === point.destination);
-  const destinationName = destinationData?.name;
+  const destinationName = destinationData?.name || '';
   
   const {type, dateFrom, dateTo, basePrice, isFavorite, offers: selectedOffers} = point;
   

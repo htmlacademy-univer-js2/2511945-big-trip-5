@@ -1,5 +1,6 @@
 import TripPresenter from './presenter/trip-presenter.js';
-import PointModel, {FiltersModel} from './model/model.js';
+import PointsModel from './model/model.js';
+import {FiltersModel} from './model/model.js';
 import {render} from './framework/render.js';
 import FilterPresenter from './presenter/filter-presenter.js';
 import ApiService from './api.js';
@@ -10,7 +11,7 @@ const siteFiltersElement = document.querySelector('.trip-controls__filters');
 const newPointButton = document.querySelector('.trip-main__event-add-btn');
 
 const apiService = new ApiService();
-const pointsModel = new PointModel({apiService});
+const pointsModel = new PointsModel({apiService});
 const filtersModel = new FiltersModel();
 
 const tripPresenter = new TripPresenter({

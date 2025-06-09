@@ -27,7 +27,7 @@ export default class FilterPresenter {
   }
 
   #generateFilterItems() {
-    const points = this.#pointsModel.getPoints();
+    const points = this.#pointsModel.points;
     const now = new Date();
 
     const hasFuturePoints = points.some((point) => new Date(point.dateFrom) > now);

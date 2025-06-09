@@ -241,6 +241,13 @@ export default class EventCreateView extends AbstractStatefulView {
           destination: selectedDestination.id
         }
       });
+    } else {
+      this.updateElement({
+        point: {
+          ...this._state.point,
+          destination: null
+        }
+      });
     }
   };
 

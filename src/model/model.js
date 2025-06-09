@@ -1,37 +1,27 @@
 import {UpdateType, FilterType} from '../const.js';
 
-export class FiltersModel {
-  #filter = FilterType.EVERYTHING;
-  #observers = [];
-
-  get filter() {
-    return this.#filter;
-  }
-
-  setFilter(filter) {
-    this.#filter = filter;
-    this.#notifyObservers();
-  }
-
-  addObserver(observer) {
-    this.#observers.push(observer);
-  }
-
-  #notifyObservers() {
-    this.#observers.forEach((observer) => observer());
-  }
-}
-
-export default class PointModel {
+export default class PointsModel {
   #points = [];
   #destinations = [];
   #offers = [];
-  #observers = [];
   #apiService = null;
   #isLoading = true;
+  #observers = [];
 
   constructor({apiService}) {
     this.#apiService = apiService;
+  }
+
+  get points() {
+    return this.#points;
+  }
+
+  get destinations() {
+    return this.#destinations;
+  }
+
+  get offers() {
+    return this.#offers;
   }
 
   get isLoading() {
@@ -44,19 +34,19 @@ export default class PointModel {
       this.#points = data.points.map(this.#adaptToClient);
       this.#destinations = data.destinations;
       this.#offers = data.offers;
-      this.#isLoading = false;
     } catch(err) {
       this.#points = [];
       this.#destinations = [];
       this.#offers = [];
-      this.#isLoading = false;
       throw new Error('Failed to load data');
+    } finally {
+      this.#isLoading = false;
     }
 
     this.#notifyObservers(UpdateType.INIT);
   }
 
-  getPoints(filterType = FilterType.EVERYTHING) {
+  getFilteredPoints(filterType) {
     const now = new Date();
     
     switch (filterType) {
@@ -72,22 +62,6 @@ export default class PointModel {
     }
   }
 
-  getDestinations() {
-    return this.#destinations;
-  }
-
-  getOffers() {
-    return this.#offers;
-  }
-
-  addObserver(observer) {
-    this.#observers.push(observer);
-  }
-
-  #notifyObservers(updateType, data) {
-    this.#observers.forEach((observer) => observer(updateType, data));
-  }
-
   async addPoint(updateType, update) {
     try {
       const response = await this.#apiService.addPoint(update);
@@ -96,7 +70,29 @@ export default class PointModel {
       this.#points = [adaptedPoint, ...this.#points];
       this.#notifyObservers(updateType, adaptedPoint);
     } catch(err) {
-      throw new Error('Can\'t add point');
+    }
+  }
+
+  async updatePoint(updateType, update) {
+    const index = this.#points.findIndex((point) => point.id === update.id);
+    
+    if (index === -1) {
+      throw new Error('Can\'t update unexisting point');
+    }
+    
+    try {
+      const response = await this.#apiService.updatePoint(update);
+      const adaptedPoint = this.#adaptToClient(response);
+      
+      this.#points = [
+        ...this.#points.slice(0, index),
+        adaptedPoint,
+        ...this.#points.slice(index + 1)
+      ];
+
+      this.#notifyObservers(updateType, adaptedPoint);
+    } catch(err) {
+      throw new Error('Can\'t update point');
     }
   }
 
@@ -119,28 +115,12 @@ export default class PointModel {
     }
   }
 
-  async updatePoint(updateType, updatedPoint) {
-    const index = this.#points.findIndex((point) => point.id === updatedPoint.id);
-    
-    if (index === -1) {
-      throw new Error('Can\'t update unexisting point');
-    }
-    
-    try {
-      const response = await this.#apiService.updatePoint(updatedPoint);
-      const adaptedPoint = this.#adaptToClient(response);
-      
-      this.#points = [
-        ...this.#points.slice(0, index),
-        adaptedPoint,
-        ...this.#points.slice(index + 1)
-      ];
+  addObserver(observer) {
+    this.#observers.push(observer);
+  }
 
-      this.#notifyObservers(updateType, adaptedPoint);
-      return adaptedPoint;
-    } catch(err) {
-      throw new Error('Can\'t update point');
-    }
+  #notifyObservers(updateType, data) {
+    this.#observers.forEach((observer) => observer(updateType, data));
   }
 
   #adaptToClient(point) {
@@ -151,5 +131,27 @@ export default class PointModel {
     };
 
     return adaptedPoint;
+  }
+}
+
+export class FiltersModel {
+  #filter = FilterType.EVERYTHING;
+  #observers = [];
+
+  get filter() {
+    return this.#filter;
+  }
+
+  setFilter(filter) {
+    this.#filter = filter;
+    this.#notifyObservers();
+  }
+
+  addObserver(observer) {
+    this.#observers.push(observer);
+  }
+
+  #notifyObservers() {
+    this.#observers.forEach((observer) => observer());
   }
 }
