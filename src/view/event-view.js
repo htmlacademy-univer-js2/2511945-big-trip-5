@@ -7,13 +7,16 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 function createEventTemplate(point, destinations, offers) {
-  const destinationData = destinations.find(dest => dest.id === point.destination);
-  const destinationName = destinationData?.name || '';
+  const destination = destinations.find((dest) => dest.id === point.destination);
+  const destinationName = destination?.name || '';
   
-  const {type, dateFrom, dateTo, basePrice, isFavorite, offers: selectedOffers} = point;
+  const {type, dateFrom, dateTo, basePrice, isFavorite, offers: selectedOfferIds} = point;
   
   const typeOffers = offers.find((offer) => offer.type === type)?.offers || [];
-  const offersToDisplay = typeOffers.filter(offer => selectedOffers?.includes(offer.id));
+  
+  const selectedOffers = typeOffers.filter((offer) => 
+    selectedOfferIds.includes(offer.id)
+  );
 
   const startDate = dayjs(dateFrom).format('MMM DD');
   const startTime = dayjs(dateFrom).format('HH:mm');
@@ -37,12 +40,13 @@ function createEventTemplate(point, destinations, offers) {
           <p class="event__duration">${duration}</p>
         </div>
         <p class="event__price">
-          &euro;&nbsp;<span class="event__price-value">${basePrice ?? ''}</span>
+          &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
         </p>
-        ${offersToDisplay.length > 0 ? `
+        
+        ${selectedOffers.length > 0 ? `
           <h4 class="visually-hidden">Offers:</h4>
           <ul class="event__selected-offers">
-            ${offersToDisplay.map(offer => `
+            ${selectedOffers.map((offer) => `
               <li class="event__offer">
                 <span class="event__offer-title">${offer.title}</span>
                 &plus;&euro;&nbsp;
@@ -51,6 +55,7 @@ function createEventTemplate(point, destinations, offers) {
             `).join('')}
           </ul>
         ` : ''}
+        
         <button class="event__favorite-btn ${isFavorite ? 'event__favorite-btn--active' : ''}" type="button">
           <span class="visually-hidden">Add to favorite</span>
           <svg class="event__favorite-icon" width="28" height="28" viewBox="0 0 28 28">
@@ -83,11 +88,11 @@ function calculateDuration(dateFrom, dateTo) {
 }
 
 export default class EventView extends AbstractView {
+  #point = null;
+  #destinations = [];
+  #offers = [];
   #handleEditClick = null;
   #handleFavoriteClick = null;
-  #point = null;
-  #destinations = null;
-  #offers = null;
 
   constructor({point, destinations, offers, onEditClick, onFavoriteClick}) {
     super();
@@ -96,9 +101,11 @@ export default class EventView extends AbstractView {
     this.#offers = offers;
     this.#handleEditClick = onEditClick;
     this.#handleFavoriteClick = onFavoriteClick;
-    
-    this.element.querySelector('.event__rollup-btn')?.addEventListener('click', this.#editClickHandler);
-    this.element.querySelector('.event__favorite-btn')?.addEventListener('click', this.#favoriteClickHandler);
+
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editClickHandler);
+    this.element.querySelector('.event__favorite-btn')
+      .addEventListener('click', this.#favoriteClickHandler);
   }
 
   get template() {

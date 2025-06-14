@@ -81,7 +81,10 @@ export default class PointsModel {
     }
     
     try {
-      const response = await this.#apiService.updatePoint(update);
+      const response = await this.#apiService.updatePoint({
+        ...update,
+        basePrice: Number(update.basePrice) || 0
+      });
       const adaptedPoint = this.#adaptToClient(response);
       
       this.#points = [
@@ -89,9 +92,9 @@ export default class PointsModel {
         adaptedPoint,
         ...this.#points.slice(index + 1)
       ];
-
       this.#notifyObservers(updateType, adaptedPoint);
     } catch(err) {
+      console.error('Update point failed:', err);
       throw new Error('Can\'t update point');
     }
   }
@@ -111,6 +114,7 @@ export default class PointsModel {
       ];
       this.#notifyObservers(updateType);
     } catch(err) {
+      console.error('Delete point failed:', err);
       throw new Error('Can\'t delete point');
     }
   }
