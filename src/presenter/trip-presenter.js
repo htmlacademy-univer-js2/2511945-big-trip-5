@@ -293,19 +293,27 @@ export default class TripPresenter {
       UserAction.ADD_POINT,
       UpdateType.MAJOR,
       point
-    );
-    this.#isCreating = false;
-    document.removeEventListener('keydown', this.#escKeyDownHandler);
+    )
+      .then(() => {
+        this.#isCreating = false;
+        document.removeEventListener('keydown', this.#escKeyDownHandler);
+        if (this.#eventCreateComponent) {
+          remove(this.#eventCreateComponent);
+          this.#eventCreateComponent = null;
+        }
+      })
+      .catch(() => {
+        this.#eventCreateComponent.shake();
+      });
   };
 
   #handleCancelClick = () => {
     this.#isCreating = false;
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
     if (this.#eventCreateComponent) {
-      this.#eventCreateComponent.element.remove();
-      this.#eventCreateComponent.removeElement();
+      remove(this.#eventCreateComponent);
       this.#eventCreateComponent = null;
     }
-    document.removeEventListener('keydown', this.#escKeyDownHandler);
   };
 
   #escKeyDownHandler = (evt) => {

@@ -164,9 +164,13 @@ export default class PointPresenter {
       UserAction.UPDATE_POINT,
       isMinorUpdate ? UpdateType.MINOR : UpdateType.PATCH,
       update
-    ).catch(() => {
-      this.setAborting();
-    });
+    )
+      .then(() => {
+        this.#replaceFormToEvent();
+      })
+      .catch(() => {
+        this.setAborting();
+      });
   };
 
   #handleDeleteClick = (point) => {
