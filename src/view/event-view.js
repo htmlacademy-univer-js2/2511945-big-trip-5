@@ -2,20 +2,18 @@ import AbstractView from "../framework/view/abstract-view.js";
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { mockOffers } from '../mock/offers.js';
-import { mockDestinations } from '../mock/destinations.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
-function createEventTemplate(point) {
-  const destinationData = mockDestinations.find(dest => dest.id === point.destination);
+function createEventTemplate(point, destinations, offers) {
+  const destinationData = destinations.find(dest => dest.id === point.destination);
   const destinationName = destinationData?.name || '';
   
   const {type, dateFrom, dateTo, basePrice, isFavorite, offers: selectedOffers} = point;
   
-  const allOffers = mockOffers.find((offer) => offer.type === type)?.offers || [];
-  const offersToDisplay = allOffers.filter(offer => selectedOffers?.includes(offer.id));
+  const typeOffers = offers.find((offer) => offer.type === type)?.offers || [];
+  const offersToDisplay = typeOffers.filter(offer => selectedOffers?.includes(offer.id));
 
   const startDate = dayjs(dateFrom).format('MMM DD');
   const startTime = dayjs(dateFrom).format('HH:mm');
@@ -88,10 +86,14 @@ export default class EventView extends AbstractView {
   #handleEditClick = null;
   #handleFavoriteClick = null;
   #point = null;
+  #destinations = null;
+  #offers = null;
 
-  constructor({point, onEditClick, onFavoriteClick}) {
+  constructor({point, destinations, offers, onEditClick, onFavoriteClick}) {
     super();
     this.#point = point;
+    this.#destinations = destinations;
+    this.#offers = offers;
     this.#handleEditClick = onEditClick;
     this.#handleFavoriteClick = onFavoriteClick;
     
@@ -100,7 +102,7 @@ export default class EventView extends AbstractView {
   }
 
   get template() {
-    return createEventTemplate(this.#point);
+    return createEventTemplate(this.#point, this.#destinations, this.#offers);
   }
 
   #editClickHandler = (evt) => {

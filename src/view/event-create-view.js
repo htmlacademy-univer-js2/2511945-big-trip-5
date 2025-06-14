@@ -1,6 +1,4 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { mockDestinations } from '../mock/destinations.js';
-import { mockOffers } from '../mock/offers.js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import dayjs from 'dayjs';
@@ -17,7 +15,7 @@ const BLANK_POINT = {
 
 const createEventCreateTemplate = (state) => {
   const { point = BLANK_POINT, destinations, offers } = state;
-  const currentOffers = mockOffers.find((offer) => offer.type === point.type)?.offers || [];
+  const currentOffers = offers.find((offer) => offer.type === point.type)?.offers || [];
   const destinationData = destinations.find((dest) => dest.id === point.destination);
 
   return `

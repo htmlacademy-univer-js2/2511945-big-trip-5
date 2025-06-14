@@ -1,15 +1,12 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { mockOffers } from '../mock/offers.js';
-import { mockDestinations } from '../mock/destinations.js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import dayjs from 'dayjs';
 
 function createEventEditTemplate(state) {
-  const { point = {}, destination, offers, isDisabled, isSaving, isDeleting } = state;
-  const allOffers = mockOffers.find((offer) => offer.type === point.type)?.offers || [];
-  const destinationData = mockDestinations.find((dest) => dest.id === point.destination) || destination;
-  const destinationName = destinationData?.name || '';
+  const { point = {}, destinations, offers, isDisabled, isSaving, isDeleting } = state;
+  const allOffers = offers.find((offer) => offer.type === point.type)?.offers || [];
+  const destinationData = destinations.find((dest) => dest.id === point.destination);
 
   return `<li class="trip-events__item">
             <form class="event event--edit" action="#" method="post">
@@ -41,7 +38,7 @@ function createEventEditTemplate(state) {
                   </label>
                   <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destinationData?.name || ''}" list="destination-list-1" placeholder=" " ${isDisabled ? 'disabled' : ''}>
                   <datalist id="destination-list-1">
-                    ${mockDestinations.map((dest) => `<option value="${dest.name}"></option>`).join('')}
+                    ${destinations.map((dest) => `<option value="${dest.name}"></option>`).join('')}
                   </datalist>
                 </div>
 
@@ -117,12 +114,12 @@ export default class EventEditView extends AbstractStatefulView {
   #datepickerFrom = null;
   #datepickerTo = null;
 
-  constructor({ point = {}, onFormSubmit, onCancelClick }) {
+  constructor({ point = {}, destinations, offers, onFormSubmit, onCancelClick }) {
     super();
     this._setState({
       point,
-      destination: mockDestinations.find((dest) => dest.id === point.destination),
-      offers: mockOffers.find((offer) => offer.type === point.type)?.offers || [],
+      destinations,
+      offers,
       isDisabled: false,
       isSaving: false,
       isDeleting: false
@@ -239,7 +236,7 @@ export default class EventEditView extends AbstractStatefulView {
     }
 
     const newType = evt.target.value;
-    const newOffers = mockOffers.find((offer) => offer.type === newType)?.offers || [];
+    const newOffers = this._state.offers.find((offer) => offer.type === newType)?.offers || [];
 
     this.updateElement({
       point: {
@@ -257,19 +254,18 @@ export default class EventEditView extends AbstractStatefulView {
     }
     evt.target.value = '';
     setTimeout(() => {
-      evt.target.value = this._state.destination?.name || '';
+      evt.target.value = this._state.destinations.find(d => d.id === this._state.point.destination)?.name || '';
     }, 0);
   };
 
   #destinationChangeHandler = (evt) => {
-    const selectedDestination = mockDestinations.find((dest) => dest.name === evt.target.value);
+    const selectedDestination = this._state.destinations.find((dest) => dest.name === evt.target.value);
     if (selectedDestination) {
       this.updateElement({
         point: {
           ...this._state.point,
           destination: selectedDestination.id
-        },
-        destination: selectedDestination
+        }
       });
     }
   };
