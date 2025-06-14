@@ -59,7 +59,10 @@ export default class ApiService {
     const response = await this._sendRequest({
       url: `points/${point.id}`,
       method: 'PUT',
-      body: JSON.stringify(this._adaptToServer(point)),
+      body: JSON.stringify(this._adaptToServer({
+        ...point,
+        basePrice: Number(point.basePrice) || 0
+      })),
       headers: new Headers({'Content-Type': 'application/json'})
     });
 

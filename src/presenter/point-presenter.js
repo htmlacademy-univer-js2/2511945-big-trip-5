@@ -163,7 +163,10 @@ export default class PointPresenter {
     this.#handleDataChange(
       UserAction.UPDATE_POINT,
       isMinorUpdate ? UpdateType.MINOR : UpdateType.PATCH,
-      update
+      {
+        ...update,
+        basePrice: Number(update.basePrice) || 0
+      }
     )
       .then(() => {
         this.#replaceFormToEvent();
@@ -180,9 +183,13 @@ export default class PointPresenter {
       UserAction.DELETE_POINT,
       UpdateType.MINOR,
       point
-    ).catch(() => {
-      this.setAborting();
-    });
+    )
+      .then(() => {
+        this.#replaceFormToEvent();
+      })
+      .catch(() => {
+        this.setAborting();
+      });
   };
 
   #handleCancelClick = () => {

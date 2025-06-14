@@ -219,21 +219,27 @@ export default class TripPresenter {
     try {
       switch (actionType) {
         case UserAction.UPDATE_POINT:
-          await this.#pointsModel.updatePoint(updateType, update);
-          break;
-        case UserAction.ADD_POINT:
-          await this.#pointsModel.addPoint(updateType, update);
+          await this.#pointsModel.updatePoint(updateType, {
+            ...update,
+            basePrice: Number(update.basePrice) || 0
+          });
           break;
         case UserAction.DELETE_POINT:
           await this.#pointsModel.deletePoint(updateType, update);
           break;
+        case UserAction.ADD_POINT:
+          await this.#pointsModel.addPoint(updateType, {
+            ...update,
+            basePrice: Number(update.basePrice) || 0
+          });
+          break;
       }
     } catch (err) {
+      console.error('Error handling action:', err);
       const presenter = this.#pointPresenters.get(update.id);
       if (presenter) {
         presenter.setAborting();
       }
-      throw err;
     }
   };
 
